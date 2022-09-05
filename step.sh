@@ -6,7 +6,7 @@ if [ -z "${linting_path}" ] ; then
   exit 1
 fi
 
-FLAGS=""
+FLAGS="${linting_files}"
 if [ "${strict}" = "yes" ] ; then
   FLAGS="--strict $FLAGS"
 fi
@@ -17,7 +17,9 @@ fi
 
 cd "${linting_path}"
 
-output="$(swiftlint lint --reporter "${reporter}" ${FLAGS} ${linting_files})"
+output="$(swiftlint lint --reporter "${reporter}" ${FLAGS})"
+firstOutput=$output
+
 envman add --key "SWIFTLINT_REPORT" --value "${output}"
 echo "Saved swiftlint output in SWIFTLINT_REPORT"
 
@@ -69,3 +71,11 @@ cp $report_path "$test_run_dir/UnitTest.xml"
 # Creating the test-info.json file with the name of the test run defined:
 echo '{"test-name":"Swiftlint"}' >> "$test_run_dir/test-info.json"
 echo "Done"
+
+# Trigger an error if some errors has been detected
+if [ ! -z "$firstOutput" ] && [ "${strict}" = "yes" ]; then
+  echo "Violations found :"
+  echo $firstOutput
+
+  exit 1
+fi
